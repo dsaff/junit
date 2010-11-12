@@ -7,6 +7,7 @@ import org.junit.internal.AssumptionViolatedException;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.model.MultipleFailureException;
 
 public class EachTestNotifier {
 	private final RunNotifier fNotifier;
@@ -19,15 +20,15 @@ public class EachTestNotifier {
 	}
 
 	public void addFailure(Throwable targetException) {
-		if (targetException instanceof org.junit.runners.model.MultipleFailureException) {
-			addMultipleFailureException((org.junit.runners.model.MultipleFailureException) targetException);
+		if (targetException instanceof MultipleFailureException) {
+			addMultipleFailureException((MultipleFailureException) targetException);
 		} else {
 			fNotifier
 					.fireTestFailure(new Failure(fDescription, targetException));
 		}
 	}
 
-	private void addMultipleFailureException(org.junit.runners.model.MultipleFailureException mfe) {
+	private void addMultipleFailureException(MultipleFailureException mfe) {
 		for (Throwable each : mfe.getFailures())
 			addFailure(each);
 	}
