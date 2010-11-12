@@ -19,15 +19,15 @@ public class EachTestNotifier {
 	}
 
 	public void addFailure(Throwable targetException) {
-		if (targetException instanceof MultipleFailureException) {
-			addMultipleFailureException((MultipleFailureException) targetException);
+		if (targetException instanceof org.junit.runners.model.MultipleFailureException) {
+			addMultipleFailureException((org.junit.runners.model.MultipleFailureException) targetException);
 		} else {
 			fNotifier
 					.fireTestFailure(new Failure(fDescription, targetException));
 		}
 	}
 
-	private void addMultipleFailureException(MultipleFailureException mfe) {
+	private void addMultipleFailureException(org.junit.runners.model.MultipleFailureException mfe) {
 		for (Throwable each : mfe.getFailures())
 			addFailure(each);
 	}
