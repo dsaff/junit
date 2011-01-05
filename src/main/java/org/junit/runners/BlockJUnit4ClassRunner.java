@@ -10,8 +10,6 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.Test.None;
-import org.junit.internal.AssumptionViolatedException;
-import org.junit.internal.runners.model.EachTestNotifier;
 import org.junit.internal.runners.model.MultipleFailureException;
 import org.junit.internal.runners.model.ReflectiveCallable;
 import org.junit.internal.runners.statements.ExpectException;
@@ -27,6 +25,7 @@ import org.junit.runners.model.FrameworkField;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
+import org.junit.runners.model.StatementExecutor;
 
 /**
  * Implements the JUnit 4 standard test case class model, as defined by the
@@ -64,30 +63,22 @@ public class BlockJUnit4ClassRunner extends ParentRunner<FrameworkMethod> {
 
 	@Override
 	protected void runChild(FrameworkMethod method, RunNotifier notifier) {
-		EachTestNotifier eachNotifier= makeNotifier(method, notifier);
 		if (method.getAnnotation(Ignore.class) != null) {
-			runIgnored(eachNotifier);
+			runIgnored(method, notifier);
 		} else {
-			runNotIgnored(method, eachNotifier);
+			runNotIgnored(method, notifier);
 		}
 	}
 
 	private void runNotIgnored(FrameworkMethod method,
-			EachTestNotifier eachNotifier) {
-		eachNotifier.fireTestStarted();
-		try {
-			methodBlock(method).evaluate();
-		} catch (AssumptionViolatedException e) {
-			eachNotifier.addFailedAssumption(e);
-		} catch (Throwable e) {
-			eachNotifier.addFailure(e);
-		} finally {
-			eachNotifier.fireTestFinished();
-		}
+			RunNotifier notifier) {
+		StatementExecutor executor= new StatementExecutor(notifier);
+		executor.executeTest(methodBlock(method), describeChild(method));
 	}
 
-	private void runIgnored(EachTestNotifier eachNotifier) {
-		eachNotifier.fireTestIgnored();
+	private void runIgnored(FrameworkMethod method,
+			RunNotifier notifier) {
+		notifier.fireTestIgnored(describeChild(method));
 	}
 
 	@Override
@@ -390,12 +381,6 @@ public class BlockJUnit4ClassRunner extends ParentRunner<FrameworkMethod> {
 	private List<TestRule> getTestRules(Object target) {
 		return getTestClass().getAnnotatedFieldValues(target,
 				Rule.class, TestRule.class);
-	}
-
-	private EachTestNotifier makeNotifier(FrameworkMethod method,
-			RunNotifier notifier) {
-		Description description= describeChild(method);
-		return new EachTestNotifier(notifier, description);
 	}
 
 	private Class<? extends Throwable> getExpectedException(Test annotation) {

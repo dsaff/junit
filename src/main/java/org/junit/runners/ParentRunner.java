@@ -11,8 +11,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.internal.AssumptionViolatedException;
-import org.junit.internal.runners.model.EachTestNotifier;
 import org.junit.internal.runners.model.MultipleFailureException;
 import org.junit.internal.runners.statements.RunAfters;
 import org.junit.internal.runners.statements.RunBefores;
@@ -25,12 +23,12 @@ import org.junit.runner.manipulation.NoTestsRemainException;
 import org.junit.runner.manipulation.Sortable;
 import org.junit.runner.manipulation.Sorter;
 import org.junit.runner.notification.RunNotifier;
-import org.junit.runner.notification.StoppedByUserException;
 import org.junit.runners.model.FrameworkField;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerScheduler;
 import org.junit.runners.model.Statement;
+import org.junit.runners.model.StatementExecutor;
 import org.junit.runners.model.TestClass;
 
 /**
@@ -282,18 +280,14 @@ public abstract class ParentRunner<T> extends Runner implements Filterable,
 
 	@Override
 	public void run(final RunNotifier notifier) {
-		EachTestNotifier testNotifier= new EachTestNotifier(notifier,
-				getDescription());
-		try {
-			Statement statement= classBlock(notifier);
-			statement.evaluate();
-		} catch (AssumptionViolatedException e) {
-			testNotifier.fireTestIgnored();
-		} catch (StoppedByUserException e) {
-			throw e;
-		} catch (Throwable e) {
-			testNotifier.addFailure(e);
-		}
+		StatementExecutor executor= new StatementExecutor(notifier);
+		Statement statement= new Statement() {
+			@Override
+			public void evaluate() throws Throwable {
+				classBlock(notifier).evaluate();
+			}
+		};
+		executor.executeSuite(statement, getDescription());
 	}
 	
 	//
