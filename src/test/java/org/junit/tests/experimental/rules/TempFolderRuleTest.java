@@ -9,6 +9,7 @@ import static org.junit.experimental.results.ResultMatchers.isSuccessful;
 import java.io.File;
 import java.io.IOException;
 
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -67,5 +68,21 @@ public class TempFolderRuleTest {
 		folder.create();
 		folder.delete();
 		assertFalse(folder.getRoot().exists());
+	}
+
+	@After
+	public void unsetSystemProperties() {
+		System.clearProperty("org.junit.tmpdir");
+	}
+
+	@Test
+	public void parentDirectoryCanBeSpecified() throws IOException {
+		TemporaryFolder parent= new TemporaryFolder();
+		parent.create();
+		System.setProperty("org.junit.tmpdir", parent.getRoot().getAbsolutePath());
+
+		assertThat(testResult(HasTempFolder.class), isSuccessful());
+		assertFalse(createdFile.exists());
+		assertTrue(createdFile.getAbsolutePath().startsWith(parent.getRoot().getAbsolutePath()));
 	}
 }

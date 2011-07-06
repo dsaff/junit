@@ -42,7 +42,9 @@ public class TemporaryFolder extends ExternalResource {
 	 * for testing purposes only.  Do not use.
 	 */
 	public void create() throws IOException {
-		folder= File.createTempFile("junit", "");
+		String property= System.getProperty("org.junit.tmpdir");
+		File directory= property == null ? null : new File(property);
+		folder= File.createTempFile("junit", "", directory);
 		folder.delete();
 		folder.mkdir();
 	}
