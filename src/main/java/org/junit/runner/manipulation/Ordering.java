@@ -5,7 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import org.junit.internal.runners.ErrorReportingRunner;
 import org.junit.runner.Description;
+import org.junit.runner.Runner;
 
 /**
  * Reorders tests. An {@code Ordering} can reverse the order of tests, sort the
@@ -16,7 +18,7 @@ import org.junit.runner.Description;
  *
  * @since 4.13
  */
-public abstract class Ordering {
+public abstract class Ordering implements Modifier {
     
     /**
      * Creates an {@link Ordering} that shuffles the items using the given
@@ -66,6 +68,15 @@ public abstract class Ordering {
             Orderable orderable = (Orderable) runner;
             orderable.order(new GenericOrdering(this));
         }
+    }
+
+    public Runner modify(Runner delegate) {
+        try {
+            apply(delegate);
+        } catch (InvalidOrderingException e) {
+            return new ErrorReportingRunner(e);
+        }
+        return delegate;
     }
 
     /**

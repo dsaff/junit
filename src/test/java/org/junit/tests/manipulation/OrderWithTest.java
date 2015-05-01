@@ -5,13 +5,23 @@ import junit.framework.JUnit4TestAdapter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
+import org.junit.internal.runners.ErrorReportingRunner;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
-import org.junit.runner.OrderWith;
+import org.junit.runner.ModifyWith;
 import org.junit.runner.Request;
+import org.junit.runner.Result;
 import org.junit.runner.RunWith;
 import org.junit.runner.Runner;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.Modifier;
 import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.ParentRunner;
+import org.junit.runners.Suite;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.TestClass;
+
+import java.util.List;
 
 @RunWith(Enclosed.class)
 public class OrderWithTest {
@@ -36,11 +46,11 @@ public class OrderWithTest {
             }
         }
 
-        @OrderWith(AlphanumericOrdering.class)
+        @ModifyWith(AlphanumericOrdering.class)
         public static class OrderedAlphanumerically extends Unordered {
         }
 
-        @OrderWith(ReverseAlphanumericOrdering.class)
+        @ModifyWith(ReverseAlphanumericOrdering.class)
         public static class OrderedReverseAlphanumerically extends Unordered {
         }
 
@@ -102,11 +112,11 @@ public class OrderWithTest {
             }
         }
 
-        @OrderWith(AlphanumericOrdering.class)
+        @ModifyWith(AlphanumericOrdering.class)
         public static class SuiteOrderedAlphanumerically extends UnorderedSuite {
         }
 
-        @OrderWith(ReverseAlphanumericOrdering.class)
+        @ModifyWith(ReverseAlphanumericOrdering.class)
         public static class SuiteOrderedReverseAlphanumerically extends UnorderedSuite {
         }
 
@@ -152,11 +162,11 @@ public class OrderWithTest {
             log = "";
         }
 
-        @OrderWith(AlphanumericSorter.class)
+        @ModifyWith(AlphanumericSorter.class)
         public static class SortedAlphanumerically extends Unordered {
         }
 
-        @OrderWith(ReverseAlphanumericSorter.class)
+        @ModifyWith(ReverseAlphanumericSorter.class)
         public static class SortedReverseAlphanumerically extends Unordered {
         }
  
@@ -197,7 +207,7 @@ public class OrderWithTest {
             }
         }
         
-        @OrderWith(AlphanumericOrdering.class)
+        @ModifyWith(AlphanumericOrdering.class)
         public static class OrderedAlphanumerically extends Unordered {
  
             public static junit.framework.Test suite() {
@@ -205,7 +215,7 @@ public class OrderWithTest {
             }
         }
 
-        @OrderWith(ReverseAlphanumericOrdering.class)
+        @ModifyWith(ReverseAlphanumericOrdering.class)
         public static class OrderedReverseAlphanumerically extends Unordered {
 
             public static junit.framework.Test suite() {
@@ -261,6 +271,34 @@ public class OrderWithTest {
         public void unOrderablesAreHandledWithoutCrashing() {
             Request unordered = Request.aClass(UnOrderable.class).orderWith(new AlphanumericOrdering());
             new JUnitCore().run(unordered);
+        }
+    }
+
+    public static class CanFilterWithModifierToo {
+        public static class OnlyAFilter extends Filter {
+            @Override
+            public boolean shouldRun(Description description) {
+                return description.getDisplayName().equals("a");
+            }
+
+            @Override
+            public String describe() {
+                return "only a";
+            }
+        }
+
+        @ModifyWith(OnlyAFilter.class)
+        public static class AbcTests {
+            @Test public void a() {}
+            @Test public void b() {}
+            @Test public void c() {}
+        }
+
+        @Test
+        public void canFilterWithModifier() {
+            Request runner = Request.aClass(AbcTests.class);
+            Result run = new JUnitCore().run(runner);
+            assertEquals(2, run.getRunCount());
         }
     }
 }

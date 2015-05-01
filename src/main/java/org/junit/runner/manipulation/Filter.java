@@ -1,7 +1,9 @@
 package org.junit.runner.manipulation;
 
+import org.junit.internal.runners.ErrorReportingRunner;
 import org.junit.runner.Description;
 import org.junit.runner.Request;
+import org.junit.runner.Runner;
 
 /**
  * The canonical case of filtering is when you want to run a single test method in a class. Rather
@@ -14,7 +16,7 @@ import org.junit.runner.Request;
  *
  * @since 4.0
  */
-public abstract class Filter {
+public abstract class Filter implements Modifier {
     /**
      * A null <code>Filter</code> that passes all tests through.
      */
@@ -118,5 +120,14 @@ public abstract class Filter {
                 return first.describe() + " and " + second.describe();
             }
         };
+    }
+
+    public Runner modify(Runner delegate) {
+        try {
+            apply(delegate);
+        } catch (NoTestsRemainException e) {
+            return new ErrorReportingRunner(e);
+        }
+        return delegate;
     }
 }
